@@ -325,8 +325,7 @@
       <h1>Dufficy <span class="em">WC 2026</span> Draw</h1>
       <div class="subline">
         <span>FIFA World Cup 2026</span><span class="dot"></span>
-        <span>USA &middot; CAN &middot; MEX</span><span class="dot"></span>
-        <span>1st &euro;100 &middot; 2nd &euro;35</span>
+        <span>USA &middot; CAN &middot; MEX</span>
       </div>
     </div>
   </header>
@@ -428,7 +427,6 @@ function renderLeaderboard(){
   scored.forEach((p,i)=>{
     const row=document.createElement('div');
     row.className='lead-row'+(i===0&&p.total>0?' r1':'');
-    const prize = i===0?'€100':(i===1?'€35':'');
     const meta=p.teams.map(t=>`${flagImg(t,true)} ${t}`).join(' <span style="opacity:.45">·</span> ');
     row.innerHTML=`
       <div class="rank">${i+1}</div>
@@ -438,7 +436,7 @@ function renderLeaderboard(){
       </div>
       <div class="pts">
         <div class="n">${p.total}</div>
-        <div class="u">pts${prize?` · <span class="prize">${prize}</span>`:''}</div>
+        <div class="u">pts</div>
       </div>`;
     lb.appendChild(row);
   });
