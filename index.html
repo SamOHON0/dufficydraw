@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dufficy WC 2026 Draw</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Spline+Sans+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#ffffff;          /* clean white */
+    --panel:#ffffff;
+    --pitch:#0a7d54;       /* vivid pitch green */
+    --pitch-2:#0a3d2e;     /* deep green */
+    --ink:#0e1411;         /* near-black ink */
+    --line:#eef0ee;        /* hairline */
+    --line-2:#e2e6e2;
+    --gold:#e0a82e;        /* trophy gold */
+    --gold-deep:#b6831a;
+    --clay:#e0532f;        /* clay accent */
+    --muted:#7b837a;
+    --soft:#f6f8f6;        /* soft grey-green wash */
+    --shadow:0 1px 2px rgba(14,20,17,.05), 0 8px 24px rgba(14,20,17,.06);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Archivo',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.45;
+    padding:clamp(12px,3vw,32px);
+    max-width:800px;
+    margin:0 auto;
+  }
+
+  /* ---- masthead ---- */
+  .mast{
+    display:flex;
+    align-items:center;
+    gap:clamp(12px,3vw,20px);
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:8px;
+  }
+  .mast-txt{flex:1;min-width:0}
+  .eyebrow{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--clay);
+    font-weight:500;
+  }
+  .mast h1{
+    font-weight:900;
+    font-size:clamp(28px,7vw,50px);
+    line-height:.92;
+    letter-spacing:-.02em;
+    margin:0 0 8px;
+  }
+  .mast h1 .em{color:var(--pitch)}
+  .subline{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 14px;
+    align-items:center;
+  }
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--clay);display:inline-block}
+
+  /* ---- the cool soccer ball ---- */
+  .ball{
+    width:clamp(58px,16vw,82px);
+    height:clamp(58px,16vw,82px);
+    flex-shrink:0;
+    filter:drop-shadow(0 6px 14px rgba(14,20,17,.18));
+    animation:spin 9s linear infinite;
+    transform-origin:50% 50%;
+  }
+  .ball:hover{animation-duration:1.4s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.ball{animation:none}}
+
+  /* ---- status bar ---- */
+  .status{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+    margin:18px 0 6px;
+    padding:12px 15px;
+    background:var(--soft);
+    border:1px solid var(--line-2);
+    border-radius:11px;
+  }
+  .status .s-left{font-family:'Spline Sans Mono',monospace;font-size:12px;display:flex;align-items:center;gap:9px;min-width:0;color:var(--ink)}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+  .pulse.live{background:#1bb36b;box-shadow:0 0 0 0 rgba(27,179,107,.6);animation:pulse 1.8s infinite}
+  .pulse.err{background:var(--clay)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(27,179,107,.5)}70%{box-shadow:0 0 0 7px rgba(27,179,107,0)}100%{box-shadow:0 0 0 0 rgba(27,179,107,0)}}
+  .btn{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    background:var(--pitch);
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:500;
+    transition:transform .08s, background .15s, opacity .15s;
+  }
+  .btn:hover{background:var(--pitch-2)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line-2)}
+  .btn.ghost:hover{background:#fff;border-color:var(--ink)}
+
+  /* ---- live ticker ---- */
+  .ticker{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11.5px;
+    color:var(--clay);
+    margin:8px 0 4px;
+    padding:9px 13px;
+    background:#fff;
+    border:1px solid var(--line-2);
+    border-left:3px solid var(--clay);
+    border-radius:7px;
+    display:none;
+  }
+  .ticker b{color:var(--ink)}
+
+  /* ---- scoring legend ---- */
+  .legend{
+    display:flex;flex-wrap:wrap;gap:6px;
+    margin:16px 0 22px;
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;
+  }
+  .legend .chip{
+    border:1px solid var(--line-2);
+    border-radius:99px;
+    padding:4px 10px;
+    display:flex;gap:5px;align-items:center;
+    background:#fff;
+  }
+  .legend .chip b{color:var(--clay)}
+
+  /* ---- leaderboard ---- */
+  .lead{margin-bottom:30px}
+  .lead-row{
+    display:grid;
+    grid-template-columns:34px 1fr auto;
+    align-items:center;
+    gap:12px;
+    padding:12px 6px;
+    border-bottom:1px solid var(--line);
+    transition:background .15s;
+  }
+  .lead-row:hover{background:var(--soft)}
+  .rank{
+    font-family:'Spline Sans Mono',monospace;
+    font-weight:500;font-size:15px;color:var(--muted);
+    text-align:center;
+  }
+  .lead-row.r1{
+    background:linear-gradient(90deg,rgba(224,168,46,.12),rgba(224,168,46,0));
+    border-radius:10px;
+  }
+  .lead-row.r1 .rank{color:var(--gold-deep);font-weight:700}
+  .lead-row.r1 .pname{font-weight:900}
+  .pname{font-weight:700;font-size:clamp(15px,4vw,18px)}
+  .crown{color:var(--gold-deep);margin-left:5px}
+  .pmeta{
+    font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--muted);
+    margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  }
+  .pts{
+    font-family:'Spline Sans Mono',monospace;
+    font-weight:500;
+    text-align:right;
+    white-space:nowrap;
+  }
+  .pts .n{font-size:23px;font-weight:700;color:var(--ink)}
+  .pts .u{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .lead-row.r1 .pts .n{color:var(--gold-deep)}
+  .prize{font-family:'Spline Sans Mono',monospace;font-size:10px;color:var(--clay);letter-spacing:.05em}
+
+  /* ---- flags ---- */
+  .flg{
+    width:21px;height:14px;
+    object-fit:cover;
+    border-radius:2px;
+    box-shadow:0 0 0 1px rgba(14,20,17,.14);
+    vertical-align:-2px;
+    flex-shrink:0;
+  }
+  .flg.sm{width:17px;height:11px}
+
+  /* ---- section heading ---- */
+  .sec-h{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);
+    border-top:2px solid var(--ink);
+    padding-top:12px;margin-bottom:5px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .sec-sub{font-size:12px;color:var(--muted);margin-bottom:18px;font-family:'Archivo'}
+
+  /* ---- player cards ---- */
+  .player{
+    border:1px solid var(--line-2);
+    border-radius:13px;
+    margin-bottom:14px;
+    overflow:hidden;
+    background:var(--panel);
+    box-shadow:var(--shadow);
+  }
+  .p-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 16px;
+    background:var(--pitch-2);
+    color:#fff;
+  }
+  .p-head .nm{font-weight:700;font-size:16px}
+  .p-head .tot{font-family:'Spline Sans Mono',monospace;font-size:13px;color:rgba(255,255,255,.75)}
+  .p-head .tot b{color:var(--gold);font-size:17px;margin-left:3px}
+  .teams{padding:4px 0}
+  .team{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    align-items:center;
+    padding:10px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .team:last-child{border-bottom:none}
+  .t-name{font-weight:500;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .t-name .badge{
+    font-family:'Spline Sans Mono',monospace;font-size:10px;
+    background:var(--clay);color:#fff;padding:2px 7px;border-radius:99px;
+  }
+  .t-name .badge.out{background:var(--muted)}
+  .t-name .badge.grp{background:#fff;color:var(--muted);border:1px solid var(--line-2)}
+  .t-name .badge.gold{background:var(--gold-deep)}
+  .stages{display:flex;gap:3px;flex-wrap:wrap}
+  .stg{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;font-weight:500;
+    width:31px;height:28px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line-2);
+    border-radius:6px;
+    cursor:pointer;
+    background:#fff;color:var(--muted);
+    user-select:none;
+    transition:all .1s;
+  }
+  .stg:hover{border-color:var(--ink)}
+  .stg.on{background:var(--pitch);color:#fff;border-color:var(--pitch)}
+  .stg.peak{background:var(--gold);color:var(--ink);border-color:var(--gold-deep);font-weight:700}
+  .stg.win.peak{background:var(--clay);color:#fff;border-color:var(--clay)}
+
+  .foot{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:11px;color:var(--muted);
+    text-align:center;margin-top:26px;line-height:1.7;
+  }
+  .foot a{color:var(--clay)}
+  details{margin-top:12px;font-size:12px;color:var(--muted)}
+  summary{cursor:pointer;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.05em}
+  details p{margin-top:8px;font-family:'Archivo';line-height:1.5;text-align:left}
+
+  @media(max-width:480px){
+    .stg{width:29px;height:30px}
+    .t-name{font-size:14px}
+  }
+</style>
+</head>
+<body>
+  <header class="mast">
+    <!-- classic spinning soccer ball -->
+    <svg class="ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="soccer ball" role="img">
+      <defs>
+        <radialGradient id="sphere" cx="38%" cy="33%" r="75%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="68%" stop-color="#f3f5f3"/>
+          <stop offset="100%" stop-color="#d4dad5"/>
+        </radialGradient>
+        <clipPath id="ballClip"><circle cx="50" cy="50" r="46"/></clipPath>
+      </defs>
+      <!-- ball body -->
+      <circle cx="50" cy="50" r="46" fill="url(#sphere)"/>
+      <!-- panels + seams, clipped to the ball edge -->
+      <g clip-path="url(#ballClip)">
+        <g fill="#0e1411">
+          <polygon points="50.0,35.0 64.3,45.4 58.8,62.1 41.2,62.1 35.7,45.4"/>
+          <polygon points="50.0,19.0 35.7,8.6 41.2,-8.1 58.8,-8.1 64.3,8.6"/>
+          <polygon points="79.4,40.4 84.9,23.7 102.5,23.7 108.0,40.4 93.7,50.8"/>
+          <polygon points="68.2,75.1 85.8,75.1 91.3,91.8 77.0,102.2 62.7,91.8"/>
+          <polygon points="31.8,75.1 37.3,91.8 23.0,102.2 8.7,91.8 14.2,75.1"/>
+          <polygon points="20.6,40.4 6.3,50.8 -8.0,40.4 -2.5,23.7 15.1,23.7"/>
+        </g>
+        <g stroke="#0e1411" stroke-width="1.6" fill="none" stroke-linecap="round">
+          <line x1="50.0" y1="35.0" x2="50.0" y2="19.0"/>
+          <line x1="64.3" y1="45.4" x2="79.5" y2="40.4"/>
+          <line x1="58.8" y1="62.1" x2="68.2" y2="75.1"/>
+          <line x1="41.2" y1="62.1" x2="31.8" y2="75.1"/>
+          <line x1="35.7" y1="45.4" x2="20.5" y2="40.4"/>
+        </g>
+      </g>
+      <!-- crisp rim on top -->
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#0e1411" stroke-width="2.2"/>
+    </svg>
+    <div class="mast-txt">
+      <h1>Dufficy <span class="em">WC 2026</span> Draw</h1>
+      <div class="subline">
+        <span>FIFA World Cup 2026</span><span class="dot"></span>
+        <span>USA &middot; CAN &middot; MEX</span><span class="dot"></span>
+        <span>1st &euro;100 &middot; 2nd &euro;35</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="status">
+    <div class="s-left"><span class="pulse" id="pulse"></span><span id="statusTxt">Loading live results&hellip;</span></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="refreshBtn">Refresh</button>
+    </div>
+  </div>
+  <div class="ticker" id="ticker"></div>
+
+  <div class="legend">
+    <span class="chip">R32 <b>1</b></span>
+    <span class="chip">L16 <b>2</b></span>
+    <span class="chip">QF <b>3</b></span>
+    <span class="chip">SF <b>4</b></span>
+    <span class="chip">Final <b>5</b></span>
+    <span class="chip">Win <b>6</b></span>
+    <span class="chip" style="border-color:var(--clay);color:var(--clay)">points stack at each stage</span>
+  </div>
+
+  <div class="lead" id="leaderboard"></div>
+
+  <div class="sec-h"><span>The Draw</span></div>
+  <div class="sec-sub">Each entry holds three nations. A team's points come from the furthest stage it reaches. Scores update automatically from the live feed.</div>
+  <div id="players"></div>
+
+  <div class="foot">
+    Live scores via ESPN &middot; auto-refreshes every 2 minutes during the tournament.
+    <details>
+      <summary>How scoring works</summary>
+      <p>A team collects the points for every stage it clears, added together. Reaching the Round of 32 is worth 1. If that same team goes on to the Last 16 it adds 2 more (3 total), and so on up to 21 for a tournament winner (1+2+3+4+5+6). Your entry's score is the sum across all three of your nations, so three teams that each go deep can beat one that wins it all.</p>
+    </details>
+  </div>
+
+<script>
+/* ---------- DATA: the draw ---------- */
+const STAGES = [
+  {key:'R32', label:'R32', pts:1},
+  {key:'L16', label:'L16', pts:2},
+  {key:'QF',  label:'QF',  pts:3},
+  {key:'SF',  label:'SF',  pts:4},
+  {key:'F',   label:'F',   pts:5},
+  {key:'W',   label:'W',   pts:6},
+];
+
+const PLAYERS = [
+  {name:'Paddy', teams:['Argentina','Belgium','Japan']},
+  {name:'Max', teams:['England','Norway','Colombia']},
+  {name:'Grace', teams:['Portugal','Germany','Mexico']},
+  {name:'Lauren', teams:['France','Netherlands','Morocco']},
+  {name:'Cormac', teams:['Spain','Brazil','USA']},
+];
+
+/* flagcdn country codes for every team in the draw */
+const FLAG = {
+  'Portugal':'pt','USA':'us','Austria':'at','Germany':'de','Croatia':'hr','Canada':'ca',
+  'Norway':'no','Colombia':'co','Senegal':'sn','Argentina':'ar','Ecuador':'ec','Bosnia':'ba',
+  'Netherlands':'nl','Belgium':'be','Paraguay':'py','Brazil':'br','Morocco':'ma','Scotland':'gb-sct',
+  'France':'fr','Switzerland':'ch','Uruguay':'uy','England':'gb-eng','Japan':'jp','Sweden':'se',
+  'Spain':'es','Mexico':'mx','Turkey':'tr',
+};
+function flagImg(team,small){
+  const c=FLAG[team];
+  if(!c) return '';
+  return `<img class="flg${small?' sm':''}" src="https://flagcdn.com/h24/${c}.png" srcset="https://flagcdn.com/h48/${c}.png 2x" alt="" loading="lazy">`;
+}
+
+/* reached[teamName] = highest stage index reached (0..5), or -1 = none */
+const reached = {};
+PLAYERS.forEach(p=>p.teams.forEach(t=>reached[t]=-1));
+
+let knockoutKnown = false;   /* true once real teams appear in R32 fixtures */
+
+/* cumulative points for a peak stage index */
+function ptsFor(idx){
+  if(idx<0) return 0;
+  let s=0;
+  for(let i=0;i<=idx;i++) s+=STAGES[i].pts;
+  return s;
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  renderLeaderboard();
+  renderPlayers();
+}
+
+function renderLeaderboard(){
+  const scored = PLAYERS.map(p=>({
+    name:p.name,
+    teams:p.teams,
+    total:p.teams.reduce((a,t)=>a+ptsFor(reached[t]),0),
+  })).sort((a,b)=>b.total-a.total);
+
+  const lb=document.getElementById('leaderboard');
+  lb.innerHTML='';
+  scored.forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.className='lead-row'+(i===0&&p.total>0?' r1':'');
+    const prize = i===0?'€100':(i===1?'€35':'');
+    const meta=p.teams.map(t=>`${flagImg(t,true)} ${t}`).join(' <span style="opacity:.45">·</span> ');
+    row.innerHTML=`
+      <div class="rank">${i+1}</div>
+      <div>
+        <div class="pname">${shortName(p.name)}${i===0&&p.total>0?'<span class="crown">♚</span>':''}</div>
+        <div class="pmeta">${meta}</div>
+      </div>
+      <div class="pts">
+        <div class="n">${p.total}</div>
+        <div class="u">pts${prize?` · <span class="prize">${prize}</span>`:''}</div>
+      </div>`;
+    lb.appendChild(row);
+  });
+}
+
+function shortName(n){
+  return n.replace('the Kenmare Billionaire','(Kenmare)').replace('the North Sider','(North Side)').replace('the HR killer','(HR)');
+}
+
+function renderPlayers(){
+  const wrap=document.getElementById('players');
+  wrap.innerHTML='';
+  PLAYERS.forEach(p=>{
+    const total=p.teams.reduce((a,t)=>a+ptsFor(reached[t]),0);
+    const card=document.createElement('div');
+    card.className='player';
+    let teamsHtml='';
+    p.teams.forEach(t=>{
+      const idx=reached[t];
+      const badge = idx<0
+        ? (knockoutKnown ? '<span class="badge out">OUT</span>' : '<span class="badge grp">GROUPS</span>')
+        : idx===5 ? '<span class="badge gold">WINNER 🏆</span>'
+        : `<span class="badge">${STAGES[idx].label} · ${ptsFor(idx)}pt</span>`;
+      teamsHtml+=`
+        <div class="team">
+          <div class="t-name">${flagImg(t)} ${t} ${badge}</div>
+          <div class="stages">${stageReadout(idx)}</div>
+        </div>`;
+    });
+    card.innerHTML=`
+      <div class="p-head"><span class="nm">${p.name}</span><span class="tot">total <b>${total}</b></span></div>
+      <div class="teams">${teamsHtml}</div>`;
+    wrap.appendChild(card);
+  });
+}
+
+/* read-only stage display */
+function stageReadout(idx){
+  let out='';
+  STAGES.forEach((s,si)=>{
+    const on=idx>=si, peak=idx===si;
+    const cls='stg'+(on?' on':'')+(peak?' peak':'')+(s.key==='W'?' win':'');
+    out+=`<div class="${cls}" style="cursor:default">${s.label}</div>`;
+  });
+  return out;
+}
+
+/* ---------- LIVE FETCH (ESPN) ---------- */
+/* FIFA World Cup 2026: group stage 11-27 Jun, knockouts (R32) start 28 Jun, final 19 Jul */
+const API='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260720&limit=400';
+const REFRESH_MS=120000;
+let countdownTimer=null, nextRefreshAt=0;
+
+function setStatus(state,txt){
+  const pulse=document.getElementById('pulse');
+  pulse.className='pulse'+(state==='live'?' live':state==='err'?' err':'');
+  document.getElementById('statusTxt').textContent=txt;
+}
+
+/* normalise: lowercase, strip accents (Turkiye, Curacao, ...) */
+const DIACRITICS=new RegExp('[\\u0300-\\u036f]','g');
+function norm(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(DIACRITICS,'').trim();
+}
+
+/* map ESPN names/codes -> our draw names */
+const TEAM_LOOKUP = {};
+Object.keys(reached).forEach(t=>TEAM_LOOKUP[norm(t)]=t);
+Object.assign(TEAM_LOOKUP,{
+  'united states':'USA','united states of america':'USA','usa':'USA',
+  'turkiye':'Turkey','turkey':'Turkey',
+  'bosnia and herzegovina':'Bosnia','bosnia-herzegovina':'Bosnia','bosnia & herzegovina':'Bosnia',
+  'holland':'Netherlands',
+  /* ESPN FIFA 3-letter codes as fallback keys */
+  'por':'Portugal','aut':'Austria','ger':'Germany','cro':'Croatia','can':'Canada',
+  'nor':'Norway','col':'Colombia','sen':'Senegal','arg':'Argentina','ecu':'Ecuador','bih':'Bosnia',
+  'ned':'Netherlands','bel':'Belgium','par':'Paraguay','bra':'Brazil','mar':'Morocco','sco':'Scotland',
+  'fra':'France','sui':'Switzerland','uru':'Uruguay','eng':'England','jpn':'Japan','swe':'Sweden',
+  'esp':'Spain','mex':'Mexico','tur':'Turkey',
+});
+
+function matchTeam(team){
+  if(!team) return null;
+  return TEAM_LOOKUP[norm(team.displayName)]
+      || TEAM_LOOKUP[norm(team.name)]
+      || TEAM_LOOKUP[norm(team.shortDisplayName)]
+      || TEAM_LOOKUP[norm(team.abbreviation)]
+      || null;
+}
+
+/* placeholder fixtures before brackets resolve: "Group A Winner", "Round of 32 3 Winner", "TBD" */
+function isPlaceholder(team){
+  const n=(team&&team.displayName)||'';
+  return /winner|runner|place|tbd|group |loser|^[a-z]\d/i.test(n);
+}
+
+/* stage index from ESPN season slug. Order matters: 'quarter'/'semi' are
+   tested before 'final' because "quarterfinals"/"semifinals" both contain
+   the substring "final". 3rd-place match is deliberately NOT scored as a
+   final (both sides already banked SF points). */
+function stageIdx(slug){
+  if(!slug) return null;
+  if(slug.includes('round-of-32')||slug.includes('round of 32')) return 0;
+  if(slug.includes('round-of-16')||slug.includes('round of 16')||slug.includes('last-16')) return 1;
+  if(slug.includes('quarter')) return 2;
+  if(slug.includes('semi')) return 3;
+  if(slug.includes('third')||slug.includes('3rd')) return 3; /* 3rd-place: both already SF */
+  if(slug.includes('final')) return 4;
+  return null;                            /* group stage / unknown */
+}
+function isThirdPlace(slug){return slug.includes('third')||slug.includes('3rd');}
+
+async function refresh(silent){
+  if(!silent){ setStatus('','Pulling live results…'); document.getElementById('refreshBtn').disabled=true; }
+  try{
+    const res=await fetch(API,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const events=data.events||[];
+    if(!events.length) throw new Error('no games in feed');
+
+    Object.keys(reached).forEach(t=>reached[t]=-1);
+    knockoutKnown=false;
+    let winnerName=null;
+    const live=[];
+
+    events.forEach(ev=>{
+      const comp=ev.competitions&&ev.competitions[0];
+      if(!comp) return;
+      const slug=norm((ev.season&&ev.season.slug)||'');
+      const si=stageIdx(slug);
+      const status=(comp.status&&comp.status.type)?comp.status.type:{};
+      const comps=comp.competitors||[];
+
+      /* live ticker: any in-play WC game */
+      if(status.state==='in'){
+        const bits=comps.map(c=>`${(c.team&&c.team.abbreviation)||'?'} ${c.score!=null?c.score:''}`.trim());
+        live.push(`<b>${bits.join(' – ')}</b> ${comp.status.displayClock||''}`);
+      }
+
+      if(si===null) return; /* group games don't score */
+
+      /* knockouts are "known" once a real (non-placeholder) team appears in R32 */
+      if(si===0 && comps.length && comps.every(c=>!isPlaceholder(c.team))) knockoutKnown=true;
+
+      comps.forEach(c=>{
+        const t=matchTeam(c.team);
+        if(t && si>reached[t]) reached[t]=si;
+      });
+
+      /* tournament winner: the actual final, completed, winner flag */
+      if(si===4 && !isThirdPlace(slug) && status.completed){
+        const w=comps.find(c=>c.winner);
+        const wt=w&&matchTeam(w.team);
+        if(wt){ reached[wt]=5; winnerName=wt; }
+      }
+    });
+
+    render();
+    const tick=document.getElementById('ticker');
+    if(live.length){ tick.style.display='block'; tick.innerHTML='LIVE NOW &nbsp; '+live.join(' &nbsp;·&nbsp; '); }
+    else tick.style.display='none';
+
+    const stamp=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    setStatus('live',`Live · ESPN · updated ${stamp}${winnerName?' · 🏆 '+winnerName:''}`);
+    scheduleNext();
+  }catch(err){
+    setStatus('err','Feed unavailable — retrying shortly');
+    console.warn('WC fetch failed:',err);
+    scheduleNext();
+  }finally{
+    document.getElementById('refreshBtn').disabled=false;
+  }
+}
+
+/* ---- self-healing auto refresh with visible countdown ---- */
+function scheduleNext(){
+  nextRefreshAt=Date.now()+REFRESH_MS;
+}
+function tickCountdown(){
+  if(nextRefreshAt===0) return;
+  if(nextRefreshAt-Date.now()<=0){ refresh(true); return; }
+}
+
+/* ---------- WIRE UP ---------- */
+document.getElementById('refreshBtn').addEventListener('click',()=>refresh(false));
+
+/* re-pull when the tab becomes visible again (laptops waking from sleep) */
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && Date.now()>=nextRefreshAt) refresh(true);
+});
+
+render();
+refresh(false);
+/* single resilient interval: drives both the countdown check and refreshes */
+setInterval(tickCountdown, 5000);
+</script>
+</body>
+</html>
