@@ -399,9 +399,7 @@ function flagImg(team,small){
 const reached = {};
 PLAYERS.forEach(p=>p.teams.forEach(t=>reached[t]=-1));
 
-let knockoutKnown = false;   /* true once real teams appear in R32 fixtures */
-let hasFuture = new Set();    /* teams with a scheduled/in-play game still ahead */
-let groupStageDone = false;   /* true once every group game has been completed */
+let knockoutKnown = false;   /* retained: harmless, no longer gates OUT */
 
 /* cumulative points for a peak stage index */
 function ptsFor(idx){
@@ -459,7 +457,7 @@ function renderPlayers(){
     p.teams.forEach(t=>{
       const idx=reached[t];
       const badge = idx<0
-        ? ((groupStageDone && knockoutKnown && !hasFuture.has(t)) ? '<span class="badge out">OUT</span>' : '<span class="badge grp">GROUPS</span>')
+        ? '<span class="badge grp">GROUPS</span>'
         : idx===5 ? '<span class="badge gold">WINNER 🏆</span>'
         : `<span class="badge">${STAGES[idx].label} · ${ptsFor(idx)}pt</span>`;
       teamsHtml+=`
@@ -564,8 +562,6 @@ async function refresh(silent){
     knockoutKnown=false;
     let winnerName=null;
     const live=[];
-    hasFuture=new Set();   /* teams with a scheduled/in-play game still ahead */
-    let groupGamePending=false;   /* any group game not yet completed */
 
     events.forEach(ev=>{
       const comp=ev.competitions&&ev.competitions[0];
@@ -581,35 +577,21 @@ async function refresh(silent){
         live.push(`<b>${bits.join(' – ')}</b> ${comp.status.displayClock||''}`);
       }
 
-      /* record any team that still has a game to come (scheduled or in-play),
-         in ANY round including groups. used to decide OUT vs alive. */
-      if(!status.completed){
-        comps.forEach(c=>{
-          const t=matchTeam(c.team);
-          if(t) hasFuture.add(t);
-        });
-      }
+      if(si===null) return; /* group games don't score */
 
-      if(si===null){
-        /* group-stage game: if it isn't finished, groups aren't over yet */
-        if(!status.completed) groupGamePending=true;
-        return; /* group games don't score */
-      }
-
-      /* a fixture only counts once it has actually kicked off (in-play or done).
-         ESPN publishes the full R32 bracket with provisional names while the
-         group stage is still running; those scheduled games must NOT score. */
+      /* whether this knockout game has actually been played (kicked off or done) */
       const played = status.completed || status.state==='in';
-
-      /* knockouts are "known" once a real (non-placeholder) team is in a
-         R32 game that has actually started */
-      if(si===0 && played && comps.length && comps.every(c=>!isPlaceholder(c.team))) knockoutKnown=true;
-
-      if(!played) return; /* scheduled future fixture: don't score it */
 
       comps.forEach(c=>{
         const t=matchTeam(c.team);
-        if(t && si>reached[t]) reached[t]=si;
+        if(!t) return;
+        /* R32 (si===0): a real, non-placeholder team in the bracket has
+           QUALIFIED for the knockouts, so award the R32 stage immediately,
+           even before that game kicks off. ESPN slots real names into the
+           R32 fixtures as soon as teams confirm their place.
+           Deeper rounds only count once the relevant game has been played. */
+        const counts = (si===0 && !isPlaceholder(c.team)) || (si>0 && played);
+        if(counts && si>reached[t]) reached[t]=si;
       });
 
       /* tournament winner: the actual final, completed, winner flag */
@@ -619,8 +601,6 @@ async function refresh(silent){
         if(wt){ reached[wt]=5; winnerName=wt; }
       }
     });
-
-    groupStageDone = !groupGamePending;
 
     render();
     const tick=document.getElementById('ticker');
