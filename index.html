@@ -400,6 +400,7 @@ const reached = {};
 PLAYERS.forEach(p=>p.teams.forEach(t=>reached[t]=-1));
 
 let knockoutKnown = false;   /* true once real teams appear in R32 fixtures */
+let hasFuture = new Set();    /* teams with a scheduled/in-play game still ahead */
 
 /* cumulative points for a peak stage index */
 function ptsFor(idx){
@@ -457,7 +458,7 @@ function renderPlayers(){
     p.teams.forEach(t=>{
       const idx=reached[t];
       const badge = idx<0
-        ? (knockoutKnown ? '<span class="badge out">OUT</span>' : '<span class="badge grp">GROUPS</span>')
+        ? ((knockoutKnown && !hasFuture.has(t)) ? '<span class="badge out">OUT</span>' : '<span class="badge grp">GROUPS</span>')
         : idx===5 ? '<span class="badge gold">WINNER 🏆</span>'
         : `<span class="badge">${STAGES[idx].label} · ${ptsFor(idx)}pt</span>`;
       teamsHtml+=`
@@ -562,6 +563,7 @@ async function refresh(silent){
     knockoutKnown=false;
     let winnerName=null;
     const live=[];
+    hasFuture=new Set();   /* teams with a scheduled/in-play game still ahead */
 
     events.forEach(ev=>{
       const comp=ev.competitions&&ev.competitions[0];
@@ -577,10 +579,27 @@ async function refresh(silent){
         live.push(`<b>${bits.join(' – ')}</b> ${comp.status.displayClock||''}`);
       }
 
+      /* record any team that still has a game to come (scheduled or in-play),
+         in ANY round including groups. used to decide OUT vs alive. */
+      if(!status.completed){
+        comps.forEach(c=>{
+          const t=matchTeam(c.team);
+          if(t) hasFuture.add(t);
+        });
+      }
+
       if(si===null) return; /* group games don't score */
 
-      /* knockouts are "known" once a real (non-placeholder) team appears in R32 */
-      if(si===0 && comps.length && comps.every(c=>!isPlaceholder(c.team))) knockoutKnown=true;
+      /* a fixture only counts once it has actually kicked off (in-play or done).
+         ESPN publishes the full R32 bracket with provisional names while the
+         group stage is still running; those scheduled games must NOT score. */
+      const played = status.completed || status.state==='in';
+
+      /* knockouts are "known" once a real (non-placeholder) team is in a
+         R32 game that has actually started */
+      if(si===0 && played && comps.length && comps.every(c=>!isPlaceholder(c.team))) knockoutKnown=true;
+
+      if(!played) return; /* scheduled future fixture: don't score it */
 
       comps.forEach(c=>{
         const t=matchTeam(c.team);
